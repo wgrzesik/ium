@@ -1,0 +1,61 @@
+name: ML Training Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      epochs:
+        description: 'Number of epochs'
+        required: true
+        default: '5'
+      batch_size:
+        description: 'Batch size'
+        required: true
+        default: '32'
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Train model
+        run: |
+          python train.py ${{ github.event.inputs.epochs }} ${{ github.event.inputs.batch_size  }}
+
+  evaluate:
+    runs-on: ubuntu-latest
+    needs: train
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Evaluate model
+        run: |
+          python eval.py
+
+      - name: Upload metrics
+        uses: actions/upload-artifact@v3
+        with:
+          name: regression-results
+          path: |
+            regression_metrics.txt
+            data/airbnb_price_predictions.csv
